@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BICHOS - Buscador Rápido IAAS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+
+        .search-box {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .search-container {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        #searchInput {
+            width: 100%;
+            padding: 15px 50px 15px 20px;
+            font-size: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+
+        #searchInput:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #667eea;
+            font-size: 20px;
+        }
+
+        .quick-filters {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .quick-btn {
+            padding: 6px 12px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .quick-btn:hover, .quick-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .results {
+            display: grid;
+            gap: 15px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 18px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        .card-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .card-title {
+            color: #333;
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .card-content {
+            color: #666;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .card-list {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .card-list li {
+            margin: 5px 0;
+        }
+
+        .highlight {
+            background: #fff59d;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            background: white;
+            border-radius: 10px;
+        }
+
+        .info-badge {
+            display: inline-block;
+            background: #f0f0f0;
+            color: #666;
+            padding: 4px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 BICHOS - Buscador Rápido IAAS</h1>
+        </div>
+
+        <div class="search-box">
+            <div class="search-container">
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    placeholder="Buscar: guantes, N95, COVID, lavado manos, KPC..."
+                    autocomplete="off"
+                >
+                <span class="search-icon">🔎</span>
+            </div>
+            <div class="quick-filters">
+                <button class="quick-btn active" data-cat="todos">Todos</button>
+                <button class="quick-btn" data-cat="higiene">Higiene</button>
+                <button class="quick-btn" data-cat="epp">EPP</button>
+                <button class="quick-btn" data-cat="aislamiento">Aislamiento</button>
+                <button class="quick-btn" data-cat="limpieza">Limpieza</button>
+                <button class="quick-btn" data-cat="patogenos">Patógenos</button>
+            </div>
+        </div>
+
+        <div id="results" class="results"></div>
+    </div>
+
+    <script>
+        const db = [
+            {cat:"higiene",title:"Lavado Clínico de Manos",desc:"Agua fría + jabón, frotar 40-60 seg, enjuagar, secar con toalla desechable, cerrar grifo con toalla",warn:"No usar agua caliente",tags:"lavado manos agua jabon clinico"},
+            {cat:"higiene",title:"Alcohol en Manos",desc:"Aplicar dosis, frotar toda superficie: palmas, dorsos, dedos, pulgares. Duración: 20-30 segundos",tags:"alcohol manos gel alcoholico antiseptico"},
+            {cat:"higiene",title:"Lavado Quirúrgico",desc:"Sin joyas/uñas artificiales. Jabón antiséptico mínimo 2 minutos en manos y antebrazos",tags:"quirurgico cirugia esteril"},
+            {cat:"higiene",title:"Clorhexidina AC Quirúrgico",desc:"3 bombeos de 2ml: (1) dedos+antebrazo, (2) mano contraria, (3) manos+muñecas. Secar antes de guantes",tags:"clorhexidina quirurgico alcohol"},
+            
+            {cat:"epp",title:"Guantes",desc:"Usar para: secreciones, fluidos, mucosas, piel no intacta, procedimientos invasivos. Cambiar entre pacientes. Higiene manos antes y después",warn:"NO reemplaza lavado de manos",tags:"guantes proteccion latex"},
+            {cat:"epp",title:"Mascarilla N95",desc:"Aislamiento respiratorio. Para partículas <5 micrones. Usar ANTES de entrar a habitación",tags:"n95 mascarilla respirador aerosol"},
+            {cat:"epp",title:"Protección Facial",desc:"Prevenir salpicaduras en boca/nariz/ojos. Opciones: mascarilla quirúrgica + antiparras O protector facial completo",tags:"facial mascarilla antiparras visor"},
+            {cat:"epp",title:"Pechera Impermeable",desc:"Manga larga. Uso: riesgo de derrames/salpicaduras. Retirar con/después de guantes + higiene manos",tags:"pechera delantal impermeable manga"},
+            
+            {cat:"aislamiento",title:"Precaución Respiratoria",desc:"Partículas <5 micrones suspendidas. Habitación individual, N95, puerta cerrada, presión negativa",diseases:"Varicela, Herpes Zoster, Sarampión, TBC",tags:"respiratoria n95 aerosol tuberculosis varicela"},
+            {cat:"aislamiento",title:"Precaución Gotitas",desc:"Partículas >5 micrones, hasta 1 metro. Habitación individual, mascarilla <1m del paciente",diseases:"Meningitis (24h post terapia), Coqueluche, Influenza (7 días)",tags:"gotitas meningitis influenza coqueluche"},
+            {cat:"aislamiento",title:"Precaución Contacto",desc:"Habitación individual, guantes en toda atención, delantal manga larga, equipos exclusivos, higiene manos antes/después guantes",diseases:"C.difficile, KPC/NDM/VIM (hasta egreso), SAMR, Candida auris, Escabiosis (7 días post tto)",tags:"contacto kpc samr clostridium candida escabiosis"},
+            {cat:"aislamiento",title:"Contacto + Gotitas",desc:"Combinación de precauciones: guantes, delantal, mascarilla",diseases:"Adenovirus (egreso), COVID: leve 5d/grave VMI 10d/inmunosup 20d, VRS (7 días)",tags:"covid adenovirus vrs contacto gotitas"},
+            {cat:"aislamiento",title:"Precaución Protectora",desc:"Para neutropénicos (RAN<500), leucemia, trasplantes. Habitación exclusiva sin flores, aseo terminal previo, visitas restringidas, clorhexidina 2%",tags:"protectora neutropenico trasplante leucemia"},
+            
+            {cat:"limpieza",title:"Aseo de Superficies",desc:"Diario: 1) Paño+detergente, 2) Enjuague+secado, 3) Desinfección. Amonio cuaternario habitual, CLORO solo para COVID/KPC/C.difficile",tags:"aseo limpieza superficies desinfeccion cloro"},
+            {cat:"limpieza",title:"Limpieza de Equipos",desc:"Apagar y desenchufar. Paño húmedo (no exceso) con detergente, limpiar arriba→abajo. Desinfectar con alcohol 70°. NO rociar directamente",tags:"equipos medicos limpieza alcohol bomba"},
+            {cat:"limpieza",title:"Ropa Clínica",desc:"Limpia: muebles cerrados. Sucia: NO sacudir, contenedor con bolsa impermeable. Personal: guantes gruesos, mascarilla, antiparras, delantal, ducha post-turno",tags:"ropa lavanderia textil"},
+            
+            {cat:"seguridad",title:"Cortopunzantes",desc:"NUNCA reencapsular/doblar agujas. Remover con pinza/dispositivo. Contenedor AMARILLO hasta 75%. Material desechable no reutilizar",tags:"agujas cortopunzantes bisturi jeringas amarillo"},
+            {cat:"seguridad",title:"Derrames de Fluidos",desc:"EPP según riesgo. Limpiar con toallas absorbentes periferia→centro ANTES que seque. Lavar con agua+detergente. Desinfectar con alcohol 70%",tags:"derrames fluidos sangre limpieza"},
+            {cat:"seguridad",title:"Transporte de Muestras",desc:"Tubos con tapa hermética (goma/rosca). Recipientes resistentes. Llenar con precaución. SIEMPRE usar guantes",tags:"muestras tubos sangre laboratorio transporte"},
+            
+            {cat:"patogenos",title:"Varicela",desc:"Aislamiento: Respiratorio (N95). Hasta vesículas secas",tags:"varicela virus respiratorio"},
+            {cat:"patogenos",title:"COVID-19 (SARS-CoV-2)",desc:"Contacto + Gotitas. Leve: 5 días, Grave con VMI: 10 días, Inmunosuprimido: 20 días",tags:"covid coronavirus sarscov2 contacto gotitas"},
+            {cat:"patogenos",title:"Tuberculosis",desc:"Aislamiento Respiratorio (N95). Sensible: 2 sem tratamiento. Resistente: hasta baciloscopia negativa",tags:"tuberculosis tbc respiratorio n95"},
+            {cat:"patogenos",title:"KPC/NDM/VIM",desc:"Precaución por Contacto. Carbapenemasas. Hasta egreso del paciente. Usar CLORO para aseo",tags:"kpc ndm vim carbapenemasas contacto cloro"},
+            {cat:"patogenos",title:"C. difficile",desc:"Precaución por Contacto. Hasta término de enfermedad. Usar CLORO 5000ppm para aseo",tags:"clostridium difficile contacto cloro diarrea"},
+            {cat:"patogenos",title:"SAMR",desc:"Precaución por Contacto. Hasta egreso. Consultar IAAS",tags:"samr staphylococcus aureus mrsa contacto"},
+            {cat:"patogenos",title:"Influenza",desc:"Precaución por Gotitas. Hasta 7 días desde inicio de síntomas",tags:"influenza gripe gotitas"},
+            {cat:"patogenos",title:"VRS",desc:"Contacto + Gotitas. 7 días desde inicio síntomas",tags:"vrs sincicial respiratorio contacto gotitas"},
+        ];
+
+        const input = document.getElementById('searchInput');
+        const results = document.getElementById('results');
+        const btns = document.querySelectorAll('.quick-btn');
+        let activeCat = 'todos';
+
+        function search(q) {
+            const query = q.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            const words = query.split(' ').filter(w => w.length > 2);
+            
+            let filtered = db.filter(item => {
+                if(activeCat !== 'todos' && item.cat !== activeCat) return false;
+                if(words.length === 0) return true;
+                const searchText = (item.title + ' ' + item.desc + ' ' + (item.tags||'') + ' ' + (item.diseases||'')).toLowerCase();
+                return words.some(w => searchText.includes(w));
+            });
+
+            display(filtered, query);
+        }
+
+        function display(items, query) {
+            if(items.length === 0) {
+                results.innerHTML = '<div class="no-results"><h3>😕 Sin resultados</h3><p>Intenta otros términos</p></div>';
+                return;
+            }
+
+            results.innerHTML = items.map(item => `
+                <div class="card">
+                    <span class="card-badge">${item.cat.toUpperCase()}</span>
+                    <div class="card-title">${highlight(item.title, query)}</div>
+                    <div class="card-content">
+                        ${highlight(item.desc, query)}
+                        ${item.diseases ? `<div style="margin-top:8px"><strong>Enfermedades:</strong> ${highlight(item.diseases, query)}</div>` : ''}
+                        ${item.warn ? `<div style="margin-top:8px;color:#e74c3c"><strong>⚠️ ${item.warn}</strong></div>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function highlight(text, query) {
+            if(!query) return text;
+            const words = query.split(' ').filter(w => w.length > 2);
+            let result = text;
+            words.forEach(word => {
+                const regex = new RegExp(`(${word})`, 'gi');
+                result = result.replace(regex, '<span class="highlight">$1</span>');
+            });
+            return result;
+        }
+
+        input.addEventListener('input', e => search(e.target.value));
+
+        btns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                btns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                activeCat = btn.dataset.cat;
+                search(input.value);
+            });
+        });
+
+        search('');
+    </script>
+</body>
+</html>
